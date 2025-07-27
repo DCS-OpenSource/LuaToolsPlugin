@@ -29,7 +29,7 @@ KeybindToDevice.__index = KeybindToDevice
 function KeybindToDevice:new()
     local self = setmetatable({}, KeybindToDevice)
     self.keybinds = {} -- Table to hold keybinds
-
+    self.device = GetSelf()
     return self
 end
 
@@ -54,7 +54,7 @@ end
 --- @return boolean success Whether the command was successfully sent
 function KeybindToDevice:sendCommand(keyCommand, value)
     if self.keybinds[keyCommand] then
-        print_message_to_user("Sending command: " .. keyCommand .. " with value: ".. value)
+        -- print_message_to_user("Sending command: " .. keyCommand .. " with value: ".. value)
         self.keybinds[keyCommand][2]:performClickableAction(self.keybinds[keyCommand][1], value, false)
         if self.keybinds[keyCommand][3] then -- send to EFM since performClickableAction doesnt send to EFM
             dispatch_action(nil, self.keybinds[keyCommand][1], 0)
