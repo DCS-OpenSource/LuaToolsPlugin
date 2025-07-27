@@ -44,6 +44,12 @@ function Timer:stopTimer()
     self.running = false
 end
 
+function Timer:resetTimer()
+    self.elapsed = 0
+    self.completed = false
+    self.running = false
+end
+
 function Timer:updateTimer()
     if not self.running or self.completed then return end
 
