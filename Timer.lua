@@ -29,9 +29,9 @@ Timer.__index = Timer
 ---Create a new instance of the Timer table
 ---@param duration number Default 0.05 seconds. The duration set for the timer.
 ---@param updateRate number Default 1 second. The time step incremented every update
----@param callback function The callback function to execute when the timer goes off.
----@param persistentRinging boolean Default false. Whether or not the timer should execute the callback every update after it goes off. True means it should. 
----@param autoReset boolean Default false. Should the timer automatically reset itself once it has finished?
+---@param callback function|nil The callback function to execute when the timer goes off.
+---@param persistentRinging boolean|nil Default false. Whether or not the timer should execute the callback every update after it goes off. True means it should. 
+---@param autoReset boolean|nil Default false. Should the timer automatically reset itself once it has finished?
 ---@return Timer self The timer table that has been created.
 function Timer:new(duration, updateRate, callback, persistentRinging, autoReset)
     local self = setmetatable({}, Timer)
