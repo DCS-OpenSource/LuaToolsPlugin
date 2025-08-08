@@ -42,7 +42,7 @@ function Timer:new(duration, updateRate, callback, persistentRinging, autoReset)
     self.elapsed = 0
     self.completed = false
     self.persistentRinging = persistentRinging or false
-    self.autoRest = autoReset or false
+    self.autoReset = autoReset or false
     assert(not (persistentRinging and autoReset), "The timer classes persistentRinging and autoReset should not both be true")
     return self
 end
