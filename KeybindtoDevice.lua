@@ -1,7 +1,7 @@
 -- MIT License
 -- 
 -- Copyright (c) 2025 OpenFlight Community
--- 
+--
 -- Permission is hereby granted, free of charge, to any person obtaining a copy
 -- of this software and associated documentation files (the "Software"), to deal
 -- in the Software without restriction, including without limitation the rights
@@ -12,6 +12,7 @@
 -- The above copyright notice and this permission notice shall be included in all
 -- copies or substantial portions of the Software.
 -- 
+
 -- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 -- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 -- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,6 +23,7 @@
 
 local KeybindToDevice = {}
 KeybindToDevice.__index = KeybindToDevice
+
 
 -- Small helper: snap a value to the nearest entry in a list
 local function nearest_index(values, v)
@@ -34,6 +36,7 @@ local function nearest_index(values, v)
     return best_i
 end
 
+
 --- Create a new KeybindToDevice instance
 function KeybindToDevice:new()
     local self = setmetatable({}, KeybindToDevice)
@@ -41,6 +44,7 @@ function KeybindToDevice:new()
     self.device   = GetSelf()
     return self
 end
+
 
 --- Register a keybind (simple, toggle, and optional step up/down)
 --- @param deviceCommand number Device command to perform
@@ -63,8 +67,8 @@ function KeybindToDevice:registerKeybind(deviceCommand, keyCommand, toggleComman
         toggleValues  = toggleValues,
         incCommand    = incCommand,
         decCommand    = decCommand,
-        stateIndex    = 1,               -- internal toggle/step state (1-based)
-        currentValue  = 0,               -- last value applied
+        stateIndex    = 1,
+        currentValue  = 0,
         toEFM         = toEFM or false,
     }
 end
@@ -73,14 +77,14 @@ end
 --- Key/toggle/inc/dec drive the local device only; device path mirrors to EFM (if enabled)
 function KeybindToDevice:sendCommand(command, value)
     for _, bind in pairs(self.keybinds) do
-        -- 1) SIMPLE KEY PATH
+        -- SIMPLE KEY PATH
         if bind.keyCommand and command == bind.keyCommand then
             self.device:performClickableAction(bind.deviceCommand, value, false)
             bind.currentValue = value
             return
         end
 
-        -- 2) TOGGLE KEY PATH (cycle values; loops)
+        -- TOGGLE KEY PATH (cycle values; loops)
         if bind.toggleCommand and command == bind.toggleCommand then
             local tv = bind.toggleValues
             if tv and #tv > 0 then
@@ -92,7 +96,7 @@ function KeybindToDevice:sendCommand(command, value)
             return
         end
 
-        -- 2b) INCREMENT KEY PATH (no loop; clamp to last)
+        -- INCREMENT KEY PATH (no loop; clamp to last)
         if bind.incCommand and command == bind.incCommand then
             local tv = bind.toggleValues
             if tv and #tv > 0 then
@@ -106,7 +110,7 @@ function KeybindToDevice:sendCommand(command, value)
             return
         end
 
-        -- 2c) DECREMENT KEY PATH (no loop; clamp to first)
+        -- DECREMENT KEY PATH (no loop; clamp to first)
         if bind.decCommand and command == bind.decCommand then
             local tv = bind.toggleValues
             if tv and #tv > 0 then
@@ -120,7 +124,7 @@ function KeybindToDevice:sendCommand(command, value)
             return
         end
 
-        -- 3) DEVICE PATH (cockpit click / other Lua calls)
+        -- DEVICE PATH (cockpit click / other Lua calls)
         if command == bind.deviceCommand then
             local outValue = value
             if bind.toggleCommand and bind.toggleValues and #bind.toggleValues > 0 then
@@ -142,6 +146,7 @@ function KeybindToDevice:sendCommand(command, value)
     end
 end
 
+
 --- Get the current tracked value of a binding
 --- @param deviceCommand number Device command registered with this system
 --- @return number|nil The current value (nil if not registered)
@@ -153,5 +158,6 @@ function KeybindToDevice:getValue(deviceCommand)
     end
     return bind.currentValue
 end
+
 
 return KeybindToDevice
