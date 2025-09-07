@@ -42,52 +42,79 @@ function KeybindToDevice:new()
     return self
 end
 
---- Register a keybind (simple or toggle)
+--- Register a keybind (simple, toggle, and optional step up/down)
 --- @param deviceCommand number Device command to perform
 --- @param keyCommand number Keybind that directly triggers the device command
---- @param toggleCommand number|nil Keybind that cycles through toggleValues (nil for non-toggle)
+--- @param toggleCommand number|nil Keybind that cycles through toggleValues (loops)
 --- @param toggleValues number[]|nil Array of values for toggle states (e.g., {0, 0.5, 1})
---- @param toEFM boolean|nil Mirror to EFM by dispatching the keybind command with its value
-function KeybindToDevice:registerKeybind(deviceCommand, keyCommand, toggleCommand, toggleValues, toEFM)
-    -- Listen for keybinds (deviceCommand is delivered to SetCommand without listen_command)
-    if keyCommand then self.device:listen_command(keyCommand) end
+--- @param incCommand number|nil Keybind that increments stateIndex by +1 (clamped; no loop)
+--- @param decCommand number|nil Keybind that decrements stateIndex by -1 (clamped; no loop)
+--- @param toEFM boolean|nil Mirror device->EFM by dispatching the keybind command with its value
+function KeybindToDevice:registerKeybind(deviceCommand, keyCommand, toggleCommand, toggleValues, incCommand, decCommand, toEFM)
+    if keyCommand    then self.device:listen_command(keyCommand)    end
     if toggleCommand then self.device:listen_command(toggleCommand) end
+    if incCommand    then self.device:listen_command(incCommand)    end
+    if decCommand    then self.device:listen_command(decCommand)    end
 
     self.keybinds[deviceCommand] = {
         deviceCommand = deviceCommand,
         keyCommand    = keyCommand,
         toggleCommand = toggleCommand,
         toggleValues  = toggleValues,
-        stateIndex    = 1,               -- internal toggle state (1-based)
+        incCommand    = incCommand,
+        decCommand    = decCommand,
+        stateIndex    = 1,               -- internal toggle/step state (1-based)
+        currentValue  = 0,               -- last value applied
         toEFM         = toEFM or false,
     }
 end
 
 --- Send a command into the system (call from SetCommand)
---- Supports:
----  - keyCommand         : performs device action; mirrors to EFM with keyCommand
----  - toggleCommand      : cycles state; performs device action; mirrors to EFM with toggleCommand
----  - deviceCommand      : mirrors to EFM (reverse direction). For toggles, snaps to nearest state.
+--- Key/toggle/inc/dec drive the local device only; device path mirrors to EFM (if enabled)
 function KeybindToDevice:sendCommand(command, value)
     for _, bind in pairs(self.keybinds) do
         -- 1) SIMPLE KEY PATH
         if bind.keyCommand and command == bind.keyCommand then
             self.device:performClickableAction(bind.deviceCommand, value, false)
-            if bind.toEFM then
-                dispatch_action(nil, bind.keyCommand, value)
-            end
+            bind.currentValue = value
             return
         end
 
-        -- 2) TOGGLE KEY PATH (cycle values)
+        -- 2) TOGGLE KEY PATH (cycle values; loops)
         if bind.toggleCommand and command == bind.toggleCommand then
             local tv = bind.toggleValues
             if tv and #tv > 0 then
                 bind.stateIndex = bind.stateIndex % #tv + 1
                 local newValue = tv[bind.stateIndex]
                 self.device:performClickableAction(bind.deviceCommand, newValue, true)
-                if bind.toEFM then
-                    dispatch_action(nil, bind.toggleCommand, newValue)
+                bind.currentValue = newValue
+            end
+            return
+        end
+
+        -- 2b) INCREMENT KEY PATH (no loop; clamp to last)
+        if bind.incCommand and command == bind.incCommand then
+            local tv = bind.toggleValues
+            if tv and #tv > 0 then
+                if bind.stateIndex < #tv then
+                    bind.stateIndex = bind.stateIndex + 1
+                    local newValue = tv[bind.stateIndex]
+                    self.device:performClickableAction(bind.deviceCommand, newValue, true)
+                    bind.currentValue = newValue
+                end
+            end
+            return
+        end
+
+        -- 2c) DECREMENT KEY PATH (no loop; clamp to first)
+        if bind.decCommand and command == bind.decCommand then
+            local tv = bind.toggleValues
+            if tv and #tv > 0 then
+                if bind.stateIndex > 1 then
+                    bind.stateIndex = bind.stateIndex - 1
+                    local newValue = tv[bind.stateIndex]
+                    self.device:performClickableAction(bind.deviceCommand, newValue, true)
+                    bind.currentValue = newValue
                 end
             end
             return
@@ -102,6 +129,8 @@ function KeybindToDevice:sendCommand(command, value)
                 outValue = bind.toggleValues[idx]
             end
 
+            bind.currentValue = outValue
+
             if bind.toEFM then
                 local mirrorKey = bind.toggleCommand or bind.keyCommand
                 if mirrorKey then
@@ -112,7 +141,6 @@ function KeybindToDevice:sendCommand(command, value)
         end
     end
 end
-
 
 --- Get the current tracked value of a binding
 --- @param deviceCommand number Device command registered with this system
