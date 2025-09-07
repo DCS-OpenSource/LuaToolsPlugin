@@ -30,8 +30,8 @@ Timer.__index = Timer
 ---@param duration number Default 0.05 seconds. The duration set for the timer.
 ---@param updateRate number Default 1 second. The time step incremented every update
 ---@param callback function|nil The callback function to execute when the timer goes off.
----@param persistentRinging boolean Default false. Whether or not the timer should execute the callback every update after it goes off. True means it should. 
----@param autoReset boolean Default false. Should the timer automatically reset itself once it has finished?
+---@param persistentRinging boolean|nil Default false. Whether or not the timer should execute the callback every update after it goes off. True means it should. 
+---@param autoReset boolean|nil Default false. Should the timer automatically reset itself once it has finished?
 ---@return Timer self The timer table that has been created.
 function Timer:new(duration, updateRate, callback, persistentRinging, autoReset)
     local self = setmetatable({}, Timer)
@@ -42,7 +42,7 @@ function Timer:new(duration, updateRate, callback, persistentRinging, autoReset)
     self.elapsed = 0
     self.completed = false
     self.persistentRinging = persistentRinging or false
-    self.autoRest = autoReset or false
+    self.autoReset = autoReset or false
     assert(not (persistentRinging and autoReset), "The timer classes persistentRinging and autoReset should not both be true")
     return self
 end
@@ -68,28 +68,44 @@ end
 
 ---Update the timer for its time step. Should be called in the DCS device update function. 
 function Timer:updateTimer()
-    if not self.running or (self.completed and not self.persistentRinging) then return end
+    -- Only block if we're not running
+    if not self.running then return end
 
-    if self.running then
-        self.elapsed = self.elapsed + self.updateRate  
+    -- If we're in persistent-ringing mode and we've already completed, ring every update
+    if self.persistentRinging and self.completed then
+        if self.callback then self.callback() end
+        return
     end
-    
+
+    -- Normal accumulation
+    self.elapsed = self.elapsed + self.updateRate
+
     if self.elapsed >= self.duration then
-
-        self.running = false
+        -- Mark completed and fire once
         self.completed = true
+        if self.callback then self.callback() end
 
-        if self.callback then
-            self.callback()
+        if self.persistentRinging then
+            -- Stay running and keep ringing every update from now on
+            self.running = true
+            -- Clamp so the condition stays true without overflow
+            self.elapsed = self.duration
+            return
         end
 
-        if self.autoReset and not self.persistentRinging then 
-            self.elapsed = 0
-            self.completed = true
+        if self.autoReset then
+            -- Reset for the next cycle
+            -- (use modulus so we don't drift if updateRate > duration)
+            self.elapsed = self.elapsed % self.duration
+            self.completed = false
             self.running = true
+        else
+            -- One-shot: stop
+            self.running = false
         end
     end
 end
+
 
 ---Check if the timer has finished. This is not the prefered method of use for the timer, and callbacks are encouraged to be used. However, this may be more helpful at times.
 ---@return boolean self.completed Whether or not the timer has elapsed and is done counting.
