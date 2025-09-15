@@ -44,8 +44,8 @@ local function append_all(target, rows)
 end
 
 --- Create a new KeybindBlockBuilder.
---- @param targetTable table Destination table to append rows into (typically `res.keyCommands` from the input profile).
---- @return KeybindBlockBuilder builder A builder bound to `targetTable`.
+--- @param targetTable table Destination table to append rows into
+--- @return KeybindBlockBuilder builder A builder bound to targetTable.
 function KeybindBlockBuilder:new(targetTable)
     local self = setmetatable({}, KeybindBlockBuilder)
     assert(type(targetTable) == "table", "KeybindBlockBuilder:new requires a target table")
@@ -54,28 +54,20 @@ function KeybindBlockBuilder:new(targetTable)
 end
 
 
---- Add a 2-position switch block (single function, 1-indexed labels).
---- @param swCmd number            Device/keybind command for the 2-pos switch (e.g., Keys.BEACON_LIGHT_SW)
---- @param baseName string         Display base name shown in the UI (e.g., "Beacon Lights")
+--- Add a 2-position switch block.
+--- @param swCmd number            Device/keybind command for the 2-pos switch
+--- @param baseName string         Display base name shown in the UI
 --- @param categories string|string[] Category breadcrumb(s) (string or array of strings)
---- @param toggleOrLabels number|table|nil Either the toggle command (number) OR the labels table when no toggle is desired
---- @param labels table|nil        Labels table when toggleOrLabels is a number; uses 1-indexed keys [1] and [2]
+--- @param toggleCmd number|nil    Optional toggle command; pass nil if not needed
+--- @param labels table|nil        Labels table; uses 1-indexed keys [1] and [2]
 --- @return nil
-function KeybindBlockBuilder:add2Pos(swCmd, baseName, categories, toggleOrLabels, labels)
+function KeybindBlockBuilder:add2Pos(swCmd, baseName, categories, toggleCmd, labels)
     local cat  = norm_categories(categories)
     local base = baseName or "Unnamed"
 
-    local toggleCmd, labelSpec
-    if type(toggleOrLabels) == "number" then
-        toggleCmd = toggleOrLabels
-        labelSpec = labels
-    else
-        labelSpec = toggleOrLabels
-    end
-
     -- 1-indexed labels: [1] -> first (value 0), [2] -> second (value 1)
-    local first  = (labelSpec and labelSpec[1]) or "OFF"
-    local second = (labelSpec and labelSpec[2]) or "ON"
+    local first  = (labels and labels[1]) or "OFF"
+    local second = (labels and labels[2]) or "ON"
 
     local rows = {
         { down = swCmd, up = swCmd, value_down = 1, value_up = 0,
@@ -177,7 +169,7 @@ function KeybindBlockBuilder:addMultiPos(swCmd, baseName, categories, incCmd, de
 
     for i = 1, #values do
         local v = values[i]
-        local label = labelsByValue[v]  -- guaranteed string by the filter above
+        local label = labelsByValue[v]
         rows[#rows+1] = {
             down = swCmd,
             value_down = v,
@@ -190,7 +182,8 @@ function KeybindBlockBuilder:addMultiPos(swCmd, baseName, categories, incCmd, de
     append_all(self.target, rows)
 end
 
---- Append arbitrary keybind rows (escape hatch for custom entries).
+
+--- Append arbitrary keybind rows
 --- Each row should follow DCS input table conventions
 --- @param rows table[] Array of keybind rows to append verbatim.
 --- @return nil
