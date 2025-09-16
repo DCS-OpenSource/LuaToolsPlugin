@@ -54,6 +54,27 @@ function KeybindBlockBuilder:new(targetTable)
 end
 
 
+--- Add a push button block.
+--- @param btnCmd number              Device/keybind command for the button
+--- @param baseName string            Display base name shown in the UI
+--- @param categories string|string[] Category breadcrumb(s) (string or array of strings)
+--- @return nil
+function KeybindBlockBuilder:addButton(btnCmd, baseName, categories)
+    local cat  = norm_categories(categories)
+    local base = baseName or "Unnamed"
+
+    local row = {
+        down       = btnCmd,
+        up         = btnCmd,
+        value_down = 1.0,
+        value_up   = 0.0,
+        name       = L(string.format("%s", base)),
+        category   = cat,
+    }
+    append_all(self.target, { row })
+end
+
+
 --- Add a 2-position switch block (single function, 1-indexed labels).
 --- @param swCmd number            Device/keybind command for the 2-pos switch (e.g., Keys.BEACON_LIGHT_SW)
 --- @param baseName string         Display base name shown in the UI (e.g., "Beacon Lights")
