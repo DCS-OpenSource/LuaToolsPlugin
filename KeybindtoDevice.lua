@@ -54,22 +54,31 @@ end
 --- @param incCommand number|nil Keybind that increments stateIndex by +1 (clamped; no loop)
 --- @param decCommand number|nil Keybind that decrements stateIndex by -1 (clamped; no loop)
 --- @param toEFM boolean|nil Mirror device->EFM by dispatching the keybind command with its value
-function KeybindToDevice:registerKeybind(deviceCommand, keyCommand, toggleCommand, toggleValues, incCommand, decCommand, toEFM)
-    if keyCommand    then self.device:listen_command(keyCommand)    end
+--- @param default number|nil If toggle command supplied, default is an index to toggleValues, otherwise is the default starting value
+function KeybindToDevice:registerKeybind(deviceCommand, keyCommand, toggleCommand, toggleValues, incCommand, decCommand, toEFM, default)
+    if keyCommand then self.device:listen_command(keyCommand) end
     if toggleCommand then self.device:listen_command(toggleCommand) end
-    if incCommand    then self.device:listen_command(incCommand)    end
-    if decCommand    then self.device:listen_command(decCommand)    end
+    if incCommand then self.device:listen_command(incCommand) end
+    if decCommand then self.device:listen_command(decCommand) end
+
+    local stateIndex, currentValue = 1, 0
+    if toggleCommand and toggleValues and #toggleValues > 0 then
+        stateIndex = (type(default) == "number" and default >= 1 and default <= #toggleValues) and default or 1
+        currentValue = toggleValues[stateIndex] or 0
+    else
+        currentValue = type(default) == "number" and default or 0
+    end
 
     self.keybinds[deviceCommand] = {
         deviceCommand = deviceCommand,
-        keyCommand    = keyCommand,
+        keyCommand = keyCommand,
         toggleCommand = toggleCommand,
-        toggleValues  = toggleValues,
-        incCommand    = incCommand,
-        decCommand    = decCommand,
-        stateIndex    = 1,
-        currentValue  = 0,
-        toEFM         = toEFM or false,
+        toggleValues = toggleValues,
+        incCommand = incCommand,
+        decCommand = decCommand,
+        stateIndex = stateIndex,
+        currentValue = currentValue,
+        toEFM = toEFM or false,
     }
 end
 
