@@ -111,7 +111,6 @@ function animator:update()
                 -- Degenerate range: jump to target and stop
                 anim.value = anim.target
                 anim.running = false
-                apply_draw_and_clickable(anim)
             else
                 local step = fullRange * (self.update_rate / anim.speed)
                 local remaining = math.abs(anim.target - anim.value)
@@ -122,10 +121,9 @@ function animator:update()
                 else
                     anim.value = anim.value + (anim.target > anim.value and step or -step)
                 end
-
-                apply_draw_and_clickable(anim)
             end
         end
+        apply_draw_and_clickable(anim) -- this needs to go outside the running animation, if you go external view this doesnt update and it breaks
     end
 end
 
