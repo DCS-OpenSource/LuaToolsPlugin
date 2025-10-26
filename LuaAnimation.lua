@@ -49,6 +49,7 @@ function animator:create(arg_num, range, speed)
         target   = range[1],
         running  = false,
         clickableName = nil,   -- optional: name for get_clickable_element_reference()
+        param = nil
     }, animation)
 
     table.insert(self.animations, a)
@@ -92,6 +93,12 @@ function animation:setClickableUpdate(name)
     self.clickableName = name
 end
 
+--- Optional: Create a param handle
+--- @param paramName string
+function animation:setParamName(paramName)
+    self.param = get_param_handle(paramName)
+end
+
 --- Optional helpers
 function animation:isRunning() return self.running end
 function animation:get() return self.value end
@@ -122,6 +129,7 @@ function animator:update()
                     anim.value = anim.value + (anim.target > anim.value and step or -step)
                 end
             end
+            if anim.param then anim.param:set(anim.value) end
         end
         apply_draw_and_clickable(anim) -- this needs to go outside the running animation, if you go external view this doesnt update and it breaks
     end
