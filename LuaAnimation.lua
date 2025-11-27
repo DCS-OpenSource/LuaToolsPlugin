@@ -39,7 +39,8 @@ end
 --- @param arg_num number
 --- @param range table {min, max}
 --- @param speed number seconds to traverse full range (min->max)
-function animator:create(arg_num, range, speed)
+--- @param loop boolean if true, animation ping-pongs between min and max
+function animator:create(arg_num, range, speed, loop)
     local a = setmetatable({
         arg_num  = arg_num,
         min      = range[1],
@@ -49,7 +50,8 @@ function animator:create(arg_num, range, speed)
         target   = range[1],
         running  = false,
         clickableName = nil,   -- optional: name for get_clickable_element_reference()
-        param = nil
+        param = nil,
+        loop = loop or false
     }, animation)
 
     table.insert(self.animations, a)
@@ -108,7 +110,10 @@ function animation:stop() self.running = false end
 
 --- Advance all animations one tick (call in your device update())
 function animator:update()
-    if #self.animations == 0 then return end
+    -- Be defensive: if animations table doesn't exist, just no-op
+    if not self.animations or #self.animations == 0 then return end
+
+    local eps = 1e-6
 
     for _, anim in ipairs(self.animations) do
         if anim.running then
@@ -116,23 +121,53 @@ function animator:update()
             local fullRange = math.abs(anim.max - anim.min)
             if fullRange <= 1e-12 then
                 -- Degenerate range: jump to target and stop
-                anim.value = anim.target
+                anim.value   = anim.target
                 anim.running = false
             else
-                local step = fullRange * (self.update_rate / anim.speed)
+                local step      = fullRange * (self.update_rate / anim.speed)
                 local remaining = math.abs(anim.target - anim.value)
 
                 if remaining <= step then
-                    anim.value   = anim.target
-                    anim.running = false
+                    -- We consider this "reached target"
+                    anim.value = anim.target
+
+                    if anim.loop then
+                        -- SAWTOOTH / WRAP LOOP:
+                        -- Always loop from low -> high.
+                        local lo = math.min(anim.min, anim.max)
+                        local hi = math.max(anim.min, anim.max)
+
+                        -- If we reached (or are very close to) the high end,
+                        -- snap back to low and go up again.
+                        if math.abs(anim.target - hi) <= eps then
+                            anim.value   = lo   -- snap to start
+                            anim.target  = hi   -- and head to end again
+                            anim.running = true
+                        else
+                            -- If target wasn't exactly at hi (e.g. someone set a mid target),
+                            -- just restart the loop from lo -> hi as well.
+                            anim.value   = lo
+                            anim.target  = hi
+                            anim.running = true
+                        end
+                    else
+                        anim.running = false
+                    end
                 else
+                    -- Normal movement toward target
                     anim.value = anim.value + (anim.target > anim.value and step or -step)
                 end
             end
-            if anim.param then anim.param:set(anim.value) end
+
+            if anim.param then
+                anim.param:set(anim.value)
+            end
         end
-        apply_draw_and_clickable(anim) -- this needs to go outside the running animation, if you go external view this doesnt update and it breaks
+
+        -- Always apply draw & clickable, even when not moving
+        apply_draw_and_clickable(anim)
     end
 end
+
 
 return animator
