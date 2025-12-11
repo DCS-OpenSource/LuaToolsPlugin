@@ -82,7 +82,7 @@ end
 --- @param toggleCmd number|nil    Optional toggle command; pass nil if not needed
 --- @param labels table|nil        Labels table; uses 1-indexed keys [1] and [2]
 --- @return nil
-function KeybindBlockBuilder:add2Pos(swCmd, baseName, categories, toggleCmd, labels)
+function KeybindBlockBuilder:add2Pos(swCmd, baseName, categories, toggleCmd, labels, springLoaded)
     local cat  = norm_categories(categories)
     local base = baseName or "Unnamed"
 
@@ -103,11 +103,12 @@ function KeybindBlockBuilder:add2Pos(swCmd, baseName, categories, toggleCmd, lab
         }
     end
 
-    rows[#rows+1] = { down = swCmd, value_down = 1, value_up = 0,
-                      name = L(string.format("%s - %s", base, second)), category = cat }
-    rows[#rows+1] = { down = swCmd, value_down = 0, value_up = 1,
-                      name = L(string.format("%s - %s", base, first)),  category = cat }
-
+    if not springLoaded then
+        rows[#rows+1] = { down = swCmd, value_down = 1, value_up = 0,
+                          name = L(string.format("%s - %s", base, second)), category = cat }
+        rows[#rows+1] = { down = swCmd, value_down = 0, value_up = 1,
+                          name = L(string.format("%s - %s", base, first)),  category = cat }
+    end
     append_all(self.target, rows)
 end
 
