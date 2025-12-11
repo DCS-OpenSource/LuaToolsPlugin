@@ -133,7 +133,7 @@ function KeybindBlockBuilder:add3Pos(swCmd, baseName, categories, cycleCmd, labe
     rows[#rows+1] =        { down = swCmd, up = swCmd, value_down =  1, value_up = 0,
         name = L(string.format("%s - %s <> %s", base, l2, l1)), category = cat }
     
-    if !springLoaded then
+    if not springLoaded then
         -- Direct positions
         rows[#rows+1] = { down = swCmd, value_down = -1, value_up = 0, name = L(string.format("%s - %s", base, l0)), category = cat }
         rows[#rows+1] = { down = swCmd, value_down =  1, value_up = 0, name = L(string.format("%s - %s", base, l2)), category = cat }
