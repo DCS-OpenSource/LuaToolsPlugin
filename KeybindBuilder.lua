@@ -120,19 +120,25 @@ end
 --- @param labels table|nil Optional 1-indexed labels table as described above
 --- @param cycleName string|nil Optional caption for the cycle row; defaults to "CYCLE"
 --- @return nil
-function KeybindBlockBuilder:add3Pos(swCmd, baseName, categories, cycleCmd, labels, cycleName)
+function KeybindBlockBuilder:add3Pos(swCmd, baseName, categories, cycleCmd, labels, cycleName, springLoaded)
     local cat  = norm_categories(categories)
     local base = baseName or "Unnamed"
     local l0 = (labels and labels[1]) or "LEFT"    -- -1
     local l1 = (labels and labels[2]) or "CENTER"  --  0
     local l2 = (labels and labels[3]) or "RIGHT"   -- +1
 
-    local rows = {
-        { down = swCmd, up = swCmd, value_down = -1, value_up = 0,
-          name = L(string.format("%s - %s <> %s", base, l0, l1)), category = cat },
-        { down = swCmd, up = swCmd, value_down =  1, value_up = 0,
-          name = L(string.format("%s - %s <> %s", base, l2, l1)), category = cat },
-    }
+    local rows = { }
+    if springLoaded then
+        rows[#rows+1] =         { down = swCmd, up = swCmd, value_down = -1, value_up = 0,
+            name = L(string.format("%s - %s <> %s", base, l0, l1)), category = cat }
+        rows[#rows+1] =        { down = swCmd, up = swCmd, value_down =  1, value_up = 0,
+            name = L(string.format("%s - %s <> %s", base, l2, l1)), category = cat }
+    else
+        -- Direct positions
+        rows[#rows+1] = { down = swCmd, value_down = -1, value_up = 0, name = L(string.format("%s - %s", base, l0)), category = cat }
+        rows[#rows+1] = { down = swCmd, value_down =  1, value_up = 0, name = L(string.format("%s - %s", base, l2)), category = cat }
+        rows[#rows+1] = { down = swCmd, value_down =  0, value_up = 0, name = L(string.format("%s - %s", base, l1)), category = cat }
+    end
 
     if cycleCmd then
         rows[#rows+1] = {
@@ -142,10 +148,7 @@ function KeybindBlockBuilder:add3Pos(swCmd, baseName, categories, cycleCmd, labe
         }
     end
 
-    -- Direct positions
-    rows[#rows+1] = { down = swCmd, value_down = -1, value_up = 0, name = L(string.format("%s - %s", base, l0)), category = cat }
-    rows[#rows+1] = { down = swCmd, value_down =  1, value_up = 0, name = L(string.format("%s - %s", base, l2)), category = cat }
-    rows[#rows+1] = { down = swCmd, value_down =  0, value_up = 0, name = L(string.format("%s - %s", base, l1)), category = cat }
+
 
     append_all(self.target, rows)
 end
