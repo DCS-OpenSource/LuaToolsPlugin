@@ -11,6 +11,8 @@ animator.__index = animator
 local animation = {}
 animation.__index = animation
 
+local cockpit = GetDevice(0) -- mainpanel device for internal animations
+
 -- Helpers
 local function clamp(x, a, b)
     if x < a then return a end
@@ -19,7 +21,12 @@ local function clamp(x, a, b)
 end
 
 local function apply_draw_and_clickable(anim)
-    set_aircraft_draw_argument_value(anim.arg_num, anim.value)
+    if anim.cockpit == true then
+        cockpit:set_argument_value(anim.arg_num, anim.value)
+    else
+        set_aircraft_draw_argument_value(anim.arg_num, anim.value)
+    end
+    
     if anim.clickableName then
         local ref = get_clickable_element_reference(anim.clickableName)
         if ref and ref.update then ref:update() end
@@ -39,8 +46,9 @@ end
 --- @param arg_num number
 --- @param range table {min, max}
 --- @param speed number seconds to traverse full range (min->max)
---- @param loop boolean if true, animation ping-pongs between min and max
-function animator:create(arg_num, range, speed, loop)
+--- @param loop boolean|nil if true, animation ping-pongs between min and max
+--- @param isCockpit boolean|nil if true, animates the cockpit instead of external model
+function animator:create(arg_num, range, speed, loop, isCockpit)
     local a = setmetatable({
         arg_num  = arg_num,
         min      = range[1],
@@ -51,7 +59,8 @@ function animator:create(arg_num, range, speed, loop)
         running  = false,
         clickableName = nil,   -- optional: name for get_clickable_element_reference()
         param = nil,
-        loop = loop or false
+        loop = loop or false,
+        cockpit = isCockpit or false
     }, animation)
 
     table.insert(self.animations, a)
