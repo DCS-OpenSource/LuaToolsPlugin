@@ -38,10 +38,12 @@ end
 
 
 --- Create a new KeybindToDevice instance
-function KeybindToDevice:new()
+---@param enableFunction function | nil A function for enabling the keybinds for a device. If the evaluation of this function is true, then the device is "disabled". If the function is nil, its always enabled
+function KeybindToDevice:new(enableFunction)
     local self = setmetatable({}, KeybindToDevice)
     self.keybinds = {}   -- keyed by deviceCommand
     self.device   = GetSelf()
+    self.enableFunction = enableFunction
     return self
 end
 
@@ -86,6 +88,11 @@ end
 --- Key/toggle/inc/dec drive the local device only; device path mirrors to EFM (if enabled)
 function KeybindToDevice:sendCommand(command, value)
     for _, bind in pairs(self.keybinds) do
+
+        if self.enableFunction and self.enableFunction() then
+            return
+        end
+
         -- SIMPLE KEY PATH
         if bind.keyCommand and command == bind.keyCommand then
             self.device:performClickableAction(bind.deviceCommand, value, false)
