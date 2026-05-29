@@ -21,10 +21,12 @@ local function clamp(x, a, b)
 end
 
 local function apply_draw_and_clickable(anim)
-    if anim.cockpit == true then
-        cockpit:set_argument_value(anim.arg_num, anim.value)
-    else
-        set_aircraft_draw_argument_value(anim.arg_num, anim.value)
+    if anim.arg_num then
+        if anim.cockpit == true then
+            cockpit:set_argument_value(anim.arg_num, anim.value)
+        else
+            set_aircraft_draw_argument_value(anim.arg_num, anim.value)
+        end
     end
     
     if anim.clickableName then
