@@ -45,7 +45,7 @@ function animator:new(update_rate)
 end
 
 --- Register a new animation
---- @param arg_num number
+--- @param arg_num number|nil draw argument number to control (e.g. 1001), or nil if only using param
 --- @param range table {min, max}
 --- @param speed number seconds to traverse full range (min->max)
 --- @param loop boolean|nil if true, animation ping-pongs between min and max
